@@ -1,0 +1,776 @@
+-- ============================================================================
+-- CHILLI x VENYX V11 MAX - FULL UI LOADER & DYNAMIC ISLAND
+-- ============================================================================
+
+local TweenService = game:GetService("TweenService")
+local UserInputService = game:GetService("UserInputService")
+local RunService = game:GetService("RunService")
+local CoreGui = game:GetService("CoreGui")
+local Players = game:GetService("Players")
+
+-- Dọn dẹp UI cũ nếu đã chạy trước đó
+local guiParent = (gethui and gethui()) or CoreGui or Players.LocalPlayer:WaitForChild("PlayerGui")
+for _, v in pairs(guiParent:GetChildren()) do
+	if v.Name == "ChilliVenyxV11Max_UI" then
+		v:Destroy()
+	end
+end
+
+local ScreenGui = Instance.new("ScreenGui")
+ScreenGui.Name = "ChilliVenyxV11Max_UI"
+ScreenGui.ResetOnSpawn = false
+ScreenGui.IgnoreGuiInset = true
+ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+ScreenGui.Parent = guiParent
+
+-- Hàm hỗ trợ kéo thả cửa sổ (Draggable)
+local function MakeDraggable(dragHandle, targetFrame)
+	local dragging = false
+	local dragInput, dragStart, startPos
+
+	dragHandle.InputBegan:Connect(function(input)
+		if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+			dragging = true
+			dragStart = input.Position
+			startPos = targetFrame.Position
+
+			input.Changed:Connect(function()
+				if input.UserInputState == Enum.UserInputState.End then
+					dragging = false
+				end
+			end)
+		end
+	end)
+
+	dragHandle.InputChanged:Connect(function(input)
+		if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
+			dragInput = input
+		end
+	end)
+
+	UserInputService.InputChanged:Connect(function(input)
+		if input == dragInput and dragging then
+			local delta = input.Position - dragStart
+			targetFrame.Position = UDim2.new(
+				startPos.X.Scale,
+				startPos.X.Offset + delta.X,
+				startPos.Y.Scale,
+				startPos.Y.Offset + delta.Y
+			)
+		end
+	end)
+end
+
+-- Hàm tạo bo góc và viền nhanh
+local function AddCorner(parent, radius)
+	local corner = Instance.new("UICorner")
+	corner.CornerRadius = UDim.new(0, radius)
+	corner.Parent = parent
+	return corner
+end
+
+local function AddStroke(parent, color, thickness, transparency)
+	local stroke = Instance.new("UIStroke")
+	stroke.Color = color
+	stroke.Thickness = thickness or 1
+	stroke.Transparency = transparency or 0
+	stroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+	stroke.Parent = parent
+	return stroke
+end
+
+-- ============================================================================
+-- GIAO DIỆN 3: THANH DYNAMIC ISLAND "CHILLI x VENYX V11 MAX" (NÂNG CẤP)
+-- ============================================================================
+local function ShowDynamicIsland(selectedHubName)
+	local DynamicBar = Instance.new("Frame")
+	DynamicBar.Name = "DynamicIslandV11Max"
+	DynamicBar.AnchorPoint = Vector2.new(0.5, 0)
+	DynamicBar.Position = UDim2.new(0.5, 0, 0, -80) -- Bắt đầu ẩn ở trên để trượt xuống
+	DynamicBar.Size = UDim2.new(0, 290, 0, 50)
+	DynamicBar.BackgroundColor3 = Color3.fromRGB(16, 18, 22)
+	DynamicBar.BackgroundTransparency = 0.06
+	DynamicBar.Parent = ScreenGui
+	AddCorner(DynamicBar, 25)
+
+	local BarStroke = AddStroke(DynamicBar, Color3.fromRGB(255, 255, 255), 1.8, 0.15)
+	local StrokeGradient = Instance.new("UIGradient")
+	StrokeGradient.Color = ColorSequence.new({
+		ColorSequenceKeypoint.new(0, Color3.fromRGB(255, 75, 43)),
+		ColorSequenceKeypoint.new(0.5, Color3.fromRGB(255, 195, 18)),
+		ColorSequenceKeypoint.new(1, Color3.fromRGB(0, 210, 255))
+	})
+	StrokeGradient.Parent = BarStroke
+
+	-- Hiệu ứng xoay màu viền liên tục
+	task.spawn(function()
+		local rot = 0
+		while DynamicBar.Parent do
+			rot = (rot + 2) % 360
+			StrokeGradient.Rotation = rot
+			RunService.RenderStepped:Wait()
+		end
+	end)
+
+	-- Icon Trái (Ớt Lửa)
+	local IconBg = Instance.new("Frame")
+	IconBg.Size = UDim2.new(0, 36, 0, 36)
+	IconBg.Position = UDim2.new(0, 8, 0.5, -18)
+	IconBg.BackgroundColor3 = Color3.fromRGB(40, 18, 15)
+	IconBg.Parent = DynamicBar
+	AddCorner(IconBg, 18)
+	AddStroke(IconBg, Color3.fromRGB(255, 90, 45), 1, 0.3)
+
+	local IconLabel = Instance.new("TextLabel")
+	IconLabel.Size = UDim2.new(1, 0, 1, 0)
+	IconLabel.BackgroundTransparency = 1
+	IconLabel.Text = "🌶️"
+	IconLabel.TextSize = 20
+	IconLabel.Font = Enum.Font.GothamBold
+	IconLabel.Parent = IconBg
+
+	-- Tiêu đề chính: Chilli x Venyx V11 Max
+	local TitleLabel = Instance.new("TextLabel")
+	TitleLabel.Size = UDim2.new(1, -90, 0, 20)
+	TitleLabel.Position = UDim2.new(0, 52, 0, 6)
+	TitleLabel.BackgroundTransparency = 1
+	TitleLabel.Text = "Chilli × Venyx V11 Max"
+	TitleLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+	TitleLabel.Font = Enum.Font.GothamBold
+	TitleLabel.TextSize = 14
+	TitleLabel.TextXAlignment = Enum.TextXAlignment.Left
+	TitleLabel.Parent = DynamicBar
+
+	-- Chấm tròn xanh trạng thái
+	local StatusDot = Instance.new("Frame")
+	StatusDot.Size = UDim2.new(0, 8, 0, 8)
+	StatusDot.Position = UDim2.new(0, 52, 0, 31)
+	StatusDot.BackgroundColor3 = Color3.fromRGB(46, 213, 115)
+	StatusDot.Parent = DynamicBar
+	AddCorner(StatusDot, 4)
+
+	-- Chữ trạng thái + FPS
+	local SubLabel = Instance.new("TextLabel")
+	SubLabel.Size = UDim2.new(1, -100, 0, 16)
+	SubLabel.Position = UDim2.new(0, 65, 0, 27)
+	SubLabel.BackgroundTransparency = 1
+	SubLabel.Text = "Sẵn sàng (" .. selectedHubName .. ")"
+	SubLabel.TextColor3 = Color3.fromRGB(165, 245, 195)
+	SubLabel.Font = Enum.Font.GothamMedium
+	SubLabel.TextSize = 11
+	SubLabel.TextXAlignment = Enum.TextXAlignment.Left
+	SubLabel.Parent = DynamicBar
+
+	-- Nút thu gọn / mở rộng bên phải
+	local ToggleArrow = Instance.new("TextButton")
+	ToggleArrow.Size = UDim2.new(0, 28, 0, 28)
+	ToggleArrow.Position = UDim2.new(1, -36, 0.5, -14)
+	ToggleArrow.BackgroundColor3 = Color3.fromRGB(30, 34, 42)
+	ToggleArrow.Text = "▼"
+	ToggleArrow.TextColor3 = Color3.fromRGB(255, 140, 60)
+	ToggleArrow.Font = Enum.Font.GothamBold
+	ToggleArrow.TextSize = 11
+	ToggleArrow.Parent = DynamicBar
+	AddCorner(ToggleArrow, 14)
+
+	-- Thông tin mở rộng khi bấm vào thanh Dynamic Island
+	local ExtraInfo = Instance.new("TextLabel")
+	ExtraInfo.Size = UDim2.new(1, -24, 0, 20)
+	ExtraInfo.Position = UDim2.new(0, 12, 0, 52)
+	ExtraInfo.BackgroundTransparency = 1
+	ExtraInfo.Text = "⚡ FPS: 60 | Finder Free: Hoạt động | V11 Max"
+	ExtraInfo.TextColor3 = Color3.fromRGB(210, 215, 225)
+	ExtraInfo.Font = Enum.Font.Gotham
+	ExtraInfo.TextSize = 11
+	ExtraInfo.TextTransparency = 1
+	ExtraInfo.Visible = false
+	ExtraInfo.Parent = DynamicBar
+
+	local expanded = false
+	ToggleArrow.MouseButton1Click:Connect(function()
+		expanded = not expanded
+		if expanded then
+			ToggleArrow.Text = "▲"
+			ExtraInfo.Visible = true
+			TweenService:Create(DynamicBar, TweenInfo.new(0.3, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {
+				Size = UDim2.new(0, 320, 0, 78)
+			}):Play()
+			TweenService:Create(ExtraInfo, TweenInfo.new(0.25), {TextTransparency = 0}):Play()
+		else
+			ToggleArrow.Text = "▼"
+			TweenService:Create(ExtraInfo, TweenInfo.new(0.15), {TextTransparency = 1}):Play()
+			TweenService:Create(DynamicBar, TweenInfo.new(0.3, Enum.EasingStyle.Quart, Enum.EasingDirection.Out), {
+				Size = UDim2.new(0, 290, 0, 50)
+			}):Play()
+			task.delay(0.2, function()
+				if not expanded then
+					ExtraInfo.Visible = false
+				end
+			end)
+		end
+	end)
+
+	-- Cập nhật FPS thực tế trên Dynamic Island
+	task.spawn(function()
+		local lastUpdate = os.clock()
+		local frames = 0
+		while DynamicBar.Parent do
+			frames += 1
+			local now = os.clock()
+			if now - lastUpdate >= 1 then
+				local fps = math.floor(frames / (now - lastUpdate))
+				ExtraInfo.Text = string.format("⚡ FPS: %d | Chế độ: %s | V11 Max", fps, selectedHubName)
+				frames = 0
+				lastUpdate = now
+			end
+			RunService.RenderStepped:Wait()
+		end
+	end)
+
+	MakeDraggable(DynamicBar, DynamicBar)
+
+	-- Hiệu ứng xuất hiện trượt từ trên xuống
+	TweenService:Create(DynamicBar, TweenInfo.new(0.6, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {
+		Position = UDim2.new(0.5, 0, 0, 12)
+	}):Play()
+end
+
+-- ============================================================================
+-- HÀM KHỞI CHẠY SCRIPT ĐƯỢC CHỌN
+-- ============================================================================
+local scriptLaunched = false
+local function LaunchSelectedScript(choice)
+	if scriptLaunched then return end
+	scriptLaunched = true
+
+	if choice == "Chilli" then
+		ShowDynamicIsland("Chilli Hub")
+		task.spawn(function()
+			local success, err = pcall(function()
+				loadstring(game:HttpGet("https://raw.githubusercontent.com/tienkhanh1/spicy/main/Chilli.lua"))()
+			end)
+			if not success then
+				warn("[Chilli x Venyx V11 Max] Lỗi khi tải Chilli Hub:", err)
+			end
+		end)
+	elseif choice == "Venyx" then
+		ShowDynamicIsland("Venyx Hub")
+		task.spawn(function()
+			local success, err = pcall(function()
+				loadstring(game:HttpGet("https://raw.githubusercontent.com/tienkhanh1/Venyx/main/VenyxHub"))()
+			end)
+			if not success then
+				warn("[Chilli x Venyx V11 Max] Lỗi khi tải Venyx Hub:", err)
+			end
+		end)
+	end
+end
+
+-- ============================================================================
+-- GIAO DIỆN 2: BẢNG CHỌN MENU (CHILLI HUB HOẶC VENYX HUB)
+-- ============================================================================
+local function OpenSelectorMenu()
+	local SelectorFrame = Instance.new("Frame")
+	SelectorFrame.Name = "SelectorMenu"
+	SelectorFrame.AnchorPoint = Vector2.new(0.5, 0.5)
+	SelectorFrame.Position = UDim2.new(0.5, 0, 0.5, 0)
+	SelectorFrame.Size = UDim2.new(0, 420, 0, 275)
+	SelectorFrame.BackgroundColor3 = Color3.fromRGB(18, 22, 18)
+	SelectorFrame.BackgroundTransparency = 0.08
+	SelectorFrame.Parent = ScreenGui
+	AddCorner(SelectorFrame, 16)
+	AddStroke(SelectorFrame, Color3.fromRGB(255, 130, 50), 1.5, 0.25)
+
+	MakeDraggable(SelectorFrame, SelectorFrame)
+
+	-- Tiêu đề Giao diện 2
+	local HeaderTitle = Instance.new("TextLabel")
+	HeaderTitle.Size = UDim2.new(1, -20, 0, 40)
+	HeaderTitle.Position = UDim2.new(0, 10, 0, 8)
+	HeaderTitle.BackgroundTransparency = 1
+	HeaderTitle.Text = "Chilli × Venyx + Finder — Chọn menu"
+	HeaderTitle.TextColor3 = Color3.fromRGB(255, 255, 255)
+	HeaderTitle.Font = Enum.Font.GothamBold
+	HeaderTitle.TextSize = 16
+	HeaderTitle.Parent = SelectorFrame
+
+	-- NÚT 1: CHILLI HUB
+	local ChilliBtn = Instance.new("TextButton")
+	ChilliBtn.Name = "ChilliHubButton"
+	ChilliBtn.Size = UDim2.new(1, -36, 0, 82)
+	ChilliBtn.Position = UDim2.new(0, 18, 0, 54)
+	ChilliBtn.BackgroundColor3 = Color3.fromRGB(115, 32, 24)
+	ChilliBtn.BackgroundTransparency = 0.15
+	ChilliBtn.Text = ""
+	ChilliBtn.AutoButtonColor = true
+	ChilliBtn.Parent = SelectorFrame
+	AddCorner(ChilliBtn, 12)
+	AddStroke(ChilliBtn, Color3.fromRGB(255, 110, 85), 1.2, 0.2)
+
+	local ChilliIconBox = Instance.new("Frame")
+	ChilliIconBox.Size = UDim2.new(0, 56, 0, 56)
+	ChilliIconBox.Position = UDim2.new(0, 14, 0.5, -28)
+	ChilliIconBox.BackgroundColor3 = Color3.fromRGB(20, 10, 10)
+	ChilliIconBox.Parent = ChilliBtn
+	AddCorner(ChilliIconBox, 12)
+
+	local ChilliIcon = Instance.new("TextLabel")
+	ChilliIcon.Size = UDim2.new(1, 0, 1, 0)
+	ChilliIcon.BackgroundTransparency = 1
+	ChilliIcon.Text = "🔥"
+	ChilliIcon.TextSize = 30
+	ChilliIcon.Parent = ChilliIconBox
+
+	local ChilliTitle = Instance.new("TextLabel")
+	ChilliTitle.Size = UDim2.new(1, -90, 0, 22)
+	ChilliTitle.Position = UDim2.new(0, 82, 0, 12)
+	ChilliTitle.BackgroundTransparency = 1
+	ChilliTitle.Text = "Chilli Hub"
+	ChilliTitle.TextColor3 = Color3.fromRGB(255, 255, 255)
+	ChilliTitle.Font = Enum.Font.GothamBold
+	ChilliTitle.TextSize = 16
+	ChilliTitle.TextXAlignment = Enum.TextXAlignment.Left
+	ChilliTitle.Parent = ChilliBtn
+
+	local ChilliDesc = Instance.new("TextLabel")
+	ChilliDesc.Size = UDim2.new(1, -90, 0, 38)
+	ChilliDesc.Position = UDim2.new(0, 82, 0, 34)
+	ChilliDesc.BackgroundTransparency = 1
+	ChilliDesc.Text = "Đầy đủ chức năng\nHợp máy tầm trung - Mạnh"
+	ChilliDesc.TextColor3 = Color3.fromRGB(240, 230, 230)
+	ChilliDesc.Font = Enum.Font.GothamSemibold
+	ChilliDesc.TextSize = 12
+	ChilliDesc.TextXAlignment = Enum.TextXAlignment.Left
+	ChilliDesc.Parent = ChilliBtn
+
+	-- NÚT 2: VENYX HUB
+	local VenyxBtn = Instance.new("TextButton")
+	VenyxBtn.Name = "VenyxHubButton"
+	VenyxBtn.Size = UDim2.new(1, -36, 0, 82)
+	VenyxBtn.Position = UDim2.new(0, 18, 0, 148)
+	VenyxBtn.BackgroundColor3 = Color3.fromRGB(28, 42, 82)
+	VenyxBtn.BackgroundTransparency = 0.15
+	VenyxBtn.Text = ""
+	VenyxBtn.AutoButtonColor = true
+	VenyxBtn.Parent = SelectorFrame
+	AddCorner(VenyxBtn, 12)
+	AddStroke(VenyxBtn, Color3.fromRGB(110, 155, 255), 1.2, 0.2)
+
+	local VenyxIconBox = Instance.new("Frame")
+	VenyxIconBox.Size = UDim2.new(0, 56, 0, 56)
+	VenyxIconBox.Position = UDim2.new(0, 14, 0.5, -28)
+	VenyxIconBox.BackgroundColor3 = Color3.fromRGB(10, 12, 18)
+	VenyxIconBox.Parent = VenyxBtn
+	AddCorner(VenyxIconBox, 12)
+
+	local VenyxIcon = Instance.new("TextLabel")
+	VenyxIcon.Size = UDim2.new(1, 0, 1, 0)
+	VenyxIcon.BackgroundTransparency = 1
+	VenyxIcon.Text = "Vx"
+	VenyxIcon.TextColor3 = Color3.fromRGB(255, 255, 255)
+	VenyxIcon.Font = Enum.Font.GothamBlack
+	VenyxIcon.TextSize = 24
+	VenyxIcon.Parent = VenyxIconBox
+
+	local VenyxTitle = Instance.new("TextLabel")
+	VenyxTitle.Size = UDim2.new(1, -90, 0, 22)
+	VenyxTitle.Position = UDim2.new(0, 82, 0, 12)
+	VenyxTitle.BackgroundTransparency = 1
+	VenyxTitle.Text = "Venyx"
+	VenyxTitle.TextColor3 = Color3.fromRGB(255, 255, 255)
+	VenyxTitle.Font = Enum.Font.GothamBold
+	VenyxTitle.TextSize = 16
+	VenyxTitle.TextXAlignment = Enum.TextXAlignment.Left
+	VenyxTitle.Parent = VenyxBtn
+
+	local VenyxDesc = Instance.new("TextLabel")
+	VenyxDesc.Size = UDim2.new(1, -90, 0, 38)
+	VenyxDesc.Position = UDim2.new(0, 82, 0, 34)
+	VenyxDesc.BackgroundTransparency = 1
+	VenyxDesc.Text = "Nhẹ, mượt\nFull chức năng, hợp máy yếu"
+	VenyxDesc.TextColor3 = Color3.fromRGB(225, 235, 255)
+	VenyxDesc.Font = Enum.Font.GothamSemibold
+	VenyxDesc.TextSize = 12
+	VenyxDesc.TextXAlignment = Enum.TextXAlignment.Left
+	VenyxDesc.Parent = VenyxBtn
+
+	-- Dòng đếm ngược tự động vào Chilli
+	local TimerLabel = Instance.new("TextLabel")
+	TimerLabel.Size = UDim2.new(1, -36, 0, 24)
+	TimerLabel.Position = UDim2.new(0, 18, 1, -32)
+	TimerLabel.BackgroundTransparency = 1
+	TimerLabel.Text = "⏳ Tự vào Chilli sau 17 giây nếu bạn không chọn menu"
+	TimerLabel.TextColor3 = Color3.fromRGB(235, 195, 95)
+	TimerLabel.Font = Enum.Font.GothamMedium
+	TimerLabel.TextSize = 12
+	TimerLabel.TextXAlignment = Enum.TextXAlignment.Left
+	TimerLabel.Parent = SelectorFrame
+
+	-- Sự kiện chọn phiên bản
+	local chosen = false
+	local function PickOption(hubType)
+		if chosen then return end
+		chosen = true
+		SelectorFrame:Destroy()
+		LaunchSelectedScript(hubType)
+	end
+
+	ChilliBtn.MouseButton1Click:Connect(function()
+		PickOption("Chilli")
+	end)
+
+	VenyxBtn.MouseButton1Click:Connect(function()
+		PickOption("Venyx")
+	end)
+
+	-- Bộ đếm ngược 17 giây
+	task.spawn(function()
+		for sec = 17, 1, -1 do
+			if chosen or not SelectorFrame.Parent then return end
+			TimerLabel.Text = "⏳ Tự vào Chilli sau " .. tostring(sec) .. " giây nếu bạn không chọn menu"
+			task.wait(1)
+		end
+		if not chosen and SelectorFrame.Parent then
+			PickOption("Chilli")
+		end
+	end)
+end
+
+-- ============================================================================
+-- GIAO DIỆN 1: MENU KHỞI ĐỘNG CHÍNH (CHILLI x VENYX V11)
+-- ============================================================================
+local MainFrame = Instance.new("Frame")
+MainFrame.Name = "MainIntroMenu"
+MainFrame.AnchorPoint = Vector2.new(0.5, 0.5)
+MainFrame.Position = UDim2.new(0.5, 0, 0.5, 0)
+MainFrame.Size = UDim2.new(0, 380, 0, 430)
+MainFrame.BackgroundColor3 = Color3.fromRGB(16, 10, 12)
+MainFrame.Parent = ScreenGui
+AddCorner(MainFrame, 16)
+AddStroke(MainFrame, Color3.fromRGB(190, 55, 35), 1.5, 0.15)
+
+-- Thanh tiêu đề trên cùng
+local TopBar = Instance.new("Frame")
+TopBar.Size = UDim2.new(1, 0, 0, 44)
+TopBar.BackgroundTransparency = 1
+TopBar.Parent = MainFrame
+MakeDraggable(TopBar, MainFrame)
+
+local TopIconBg = Instance.new("Frame")
+TopIconBg.Size = UDim2.new(0, 26, 0, 26)
+TopIconBg.Position = UDim2.new(0, 14, 0.5, -13)
+TopIconBg.BackgroundColor3 = Color3.fromRGB(230, 85, 35)
+TopIconBg.Parent = TopBar
+AddCorner(TopIconBg, 7)
+
+local TopIconTxt = Instance.new("TextLabel")
+TopIconTxt.Size = UDim2.new(1, 0, 1, 0)
+TopIconTxt.BackgroundTransparency = 1
+TopIconTxt.Text = "🌶️"
+TopIconTxt.TextSize = 15
+TopIconTxt.Parent = TopIconBg
+
+local TopTitle = Instance.new("TextLabel")
+TopTitle.Size = UDim2.new(0, 160, 1, 0)
+TopTitle.Position = UDim2.new(0, 48, 0, 0)
+TopTitle.BackgroundTransparency = 1
+TopTitle.Text = "CHILLI x VENYX"
+TopTitle.TextColor3 = Color3.fromRGB(255, 255, 255)
+TopTitle.Font = Enum.Font.GothamBold
+TopTitle.TextSize = 13
+TopTitle.TextXAlignment = Enum.TextXAlignment.Left
+TopTitle.Parent = TopBar
+
+local VersionBadge = Instance.new("TextLabel")
+VersionBadge.Size = UDim2.new(0, 54, 0, 22)
+VersionBadge.Position = UDim2.new(1, -98, 0.5, -11)
+VersionBadge.BackgroundColor3 = Color3.fromRGB(45, 24, 18)
+VersionBadge.Text = "v11.0.0"
+VersionBadge.TextColor3 = Color3.fromRGB(255, 145, 75)
+VersionBadge.Font = Enum.Font.GothamSemibold
+VersionBadge.TextSize = 11
+VersionBadge.Parent = TopBar
+AddCorner(VersionBadge, 11)
+AddStroke(VersionBadge, Color3.fromRGB(200, 95, 45), 1, 0.3)
+
+local CloseBtn = Instance.new("TextButton")
+CloseBtn.Size = UDim2.new(0, 26, 0, 26)
+CloseBtn.Position = UDim2.new(1, -36, 0.5, -13)
+CloseBtn.BackgroundColor3 = Color3.fromRGB(38, 20, 24)
+CloseBtn.Text = "X"
+CloseBtn.TextColor3 = Color3.fromRGB(220, 200, 200)
+CloseBtn.Font = Enum.Font.GothamBold
+CloseBtn.TextSize = 12
+CloseBtn.Parent = TopBar
+AddCorner(CloseBtn, 8)
+AddStroke(CloseBtn, Color3.fromRGB(120, 50, 50), 1, 0.4)
+
+CloseBtn.MouseButton1Click:Connect(function()
+	ScreenGui:Destroy()
+end)
+
+-- Banner Thẻ Chính: CHILLI x VENYX V11
+local HeroCard = Instance.new("Frame")
+HeroCard.Size = UDim2.new(1, -28, 0, 92)
+HeroCard.Position = UDim2.new(0, 14, 0, 48)
+HeroCard.BackgroundColor3 = Color3.fromRGB(42, 12, 16)
+HeroCard.Parent = MainFrame
+AddCorner(HeroCard, 12)
+AddStroke(HeroCard, Color3.fromRGB(145, 45, 45), 1, 0.3)
+
+local HeroChilliBox = Instance.new("Frame")
+HeroChilliBox.Size = UDim2.new(0, 58, 0, 58)
+HeroChilliBox.Position = UDim2.new(0, 14, 0.5, -29)
+HeroChilliBox.BackgroundColor3 = Color3.fromRGB(26, 8, 12)
+HeroChilliBox.Parent = HeroCard
+AddCorner(HeroChilliBox, 12)
+AddStroke(HeroChilliBox, Color3.fromRGB(175, 55, 55), 1, 0.3)
+
+local HeroChilliIcon = Instance.new("TextLabel")
+HeroChilliIcon.Size = UDim2.new(1, 0, 1, 0)
+HeroChilliIcon.BackgroundTransparency = 1
+HeroChilliIcon.Text = "🌶️"
+HeroChilliIcon.TextSize = 30
+HeroChilliIcon.Parent = HeroChilliBox
+
+local HeroTitle = Instance.new("TextLabel")
+HeroTitle.Size = UDim2.new(1, -90, 0, 22)
+HeroTitle.Position = UDim2.new(0, 84, 0, 16)
+HeroTitle.BackgroundTransparency = 1
+HeroTitle.Text = "CHILLI x VENYX V11"
+HeroTitle.TextColor3 = Color3.fromRGB(255, 255, 255)
+HeroTitle.Font = Enum.Font.GothamBlack
+HeroTitle.TextSize = 15
+HeroTitle.TextXAlignment = Enum.TextXAlignment.Left
+HeroTitle.Parent = HeroCard
+
+local HeroSub = Instance.new("TextLabel")
+HeroSub.Size = UDim2.new(1, -90, 0, 18)
+HeroSub.Position = UDim2.new(0, 84, 0, 40)
+HeroSub.BackgroundTransparency = 1
+HeroSub.Text = "Finder Free chuẩn cao · Giảm lag · Mượt ⚡"
+HeroSub.TextColor3 = Color3.fromRGB(255, 150, 75)
+HeroSub.Font = Enum.Font.GothamSemibold
+HeroSub.TextSize = 11
+HeroSub.TextXAlignment = Enum.TextXAlignment.Left
+HeroSub.Parent = HeroCard
+
+local ExecutorName = (identifyexecutor and identifyexecutor()) or "Executor"
+local HeroStatus = Instance.new("TextLabel")
+HeroStatus.Size = UDim2.new(1, -90, 0, 16)
+HeroStatus.Position = UDim2.new(0, 84, 0, 62)
+HeroStatus.BackgroundTransparency = 1
+HeroStatus.Text = "🟢 Sẵn sàng · " .. tostring(ExecutorName)
+HeroStatus.TextColor3 = Color3.fromRGB(165, 165, 175)
+HeroStatus.Font = Enum.Font.Gotham
+HeroStatus.TextSize = 10
+HeroStatus.TextXAlignment = Enum.TextXAlignment.Left
+HeroStatus.Parent = HeroCard
+
+-- Tiêu đề phụ: TÍNH NĂNG MỚI V11
+local SectionTitle = Instance.new("TextLabel")
+SectionTitle.Size = UDim2.new(1, -28, 0, 20)
+SectionTitle.Position = UDim2.new(0, 14, 0, 148)
+SectionTitle.BackgroundTransparency = 1
+SectionTitle.Text = "✨ TÍNH NĂNG MỚI V11"
+SectionTitle.TextColor3 = Color3.fromRGB(235, 165, 90)
+SectionTitle.Font = Enum.Font.GothamBold
+SectionTitle.TextSize = 10
+SectionTitle.TextXAlignment = Enum.TextXAlignment.Left
+SectionTitle.Parent = MainFrame
+
+-- Thẻ Xanh Lá: FINDER FREE
+local FinderCard = Instance.new("Frame")
+FinderCard.Size = UDim2.new(1, -28, 0, 54)
+FinderCard.Position = UDim2.new(0, 14, 0, 170)
+FinderCard.BackgroundColor3 = Color3.fromRGB(14, 48, 32)
+FinderCard.Parent = MainFrame
+AddCorner(FinderCard, 12)
+AddStroke(FinderCard, Color3.fromRGB(46, 175, 105), 1, 0.25)
+
+local FinderTitle = Instance.new("TextLabel")
+FinderTitle.Size = UDim2.new(0.6, 0, 0, 20)
+FinderTitle.Position = UDim2.new(0, 16, 0, 8)
+FinderTitle.BackgroundTransparency = 1
+FinderTitle.Text = "🔍  FINDER FREE"
+FinderTitle.TextColor3 = Color3.fromRGB(120, 255, 175)
+FinderTitle.Font = Enum.Font.GothamBold
+FinderTitle.TextSize = 12
+FinderTitle.TextXAlignment = Enum.TextXAlignment.Left
+FinderTitle.Parent = FinderCard
+
+local FinderDesc = Instance.new("TextLabel")
+FinderDesc.Size = UDim2.new(0.65, 0, 0, 16)
+FinderDesc.Position = UDim2.new(0, 16, 0, 29)
+FinderDesc.BackgroundTransparency = 1
+FinderDesc.Text = "Tính năng nổi bật nhất của bản V11"
+FinderDesc.TextColor3 = Color3.fromRGB(175, 215, 190)
+FinderDesc.Font = Enum.Font.Gotham
+FinderDesc.TextSize = 10
+FinderDesc.TextXAlignment = Enum.TextXAlignment.Left
+FinderDesc.Parent = FinderCard
+
+local RateBadge = Instance.new("TextLabel")
+RateBadge.Size = UDim2.new(0, 114, 0, 24)
+RateBadge.Position = UDim2.new(1, -124, 0.5, -12)
+RateBadge.BackgroundColor3 = Color3.fromRGB(28, 92, 58)
+RateBadge.Text = "✨ TỈ LỆ CHUẨN CAO"
+RateBadge.TextColor3 = Color3.fromRGB(150, 255, 195)
+RateBadge.Font = Enum.Font.GothamBold
+RateBadge.TextSize = 9
+RateBadge.Parent = FinderCard
+AddCorner(RateBadge, 12)
+AddStroke(RateBadge, Color3.fromRGB(80, 220, 140), 1, 0.3)
+
+-- Hai thẻ tính năng song song (Tối ưu giảm lag & Mượt mà hơn)
+local LeftCard = Instance.new("Frame")
+LeftCard.Size = UDim2.new(0.5, -18, 0, 56)
+LeftCard.Position = UDim2.new(0, 14, 0, 232)
+LeftCard.BackgroundColor3 = Color3.fromRGB(22, 18, 24)
+LeftCard.Parent = MainFrame
+AddCorner(LeftCard, 10)
+AddStroke(LeftCard, Color3.fromRGB(70, 65, 85), 1, 0.4)
+
+local LeftCardTitle = Instance.new("TextLabel")
+LeftCardTitle.Size = UDim2.new(1, -16, 0, 18)
+LeftCardTitle.Position = UDim2.new(0, 8, 0, 6)
+LeftCardTitle.BackgroundTransparency = 1
+LeftCardTitle.Text = "⚡ Tối ưu giảm lag"
+LeftCardTitle.TextColor3 = Color3.fromRGB(255, 255, 255)
+LeftCardTitle.Font = Enum.Font.GothamBold
+LeftCardTitle.TextSize = 11
+LeftCardTitle.TextXAlignment = Enum.TextXAlignment.Left
+LeftCardTitle.Parent = LeftCard
+
+local LeftCardSub = Instance.new("TextLabel")
+LeftCardSub.Size = UDim2.new(1, -16, 0, 26)
+LeftCardSub.Position = UDim2.new(0, 8, 0, 24)
+LeftCardSub.BackgroundTransparency = 1
+LeftCardSub.Text = "Giảm tải CPU/GPU · Hạn chế tụt FPS, văng game"
+LeftCardSub.TextColor3 = Color3.fromRGB(165, 165, 175)
+LeftCardSub.Font = Enum.Font.Gotham
+LeftCardSub.TextSize = 9
+LeftCardSub.TextWrapped = true
+LeftCardSub.TextXAlignment = Enum.TextXAlignment.Left
+LeftCardSub.Parent = LeftCard
+
+local RightCard = Instance.new("Frame")
+RightCard.Size = UDim2.new(0.5, -18, 0, 56)
+RightCard.Position = UDim2.new(0.5, 4, 0, 232)
+RightCard.BackgroundColor3 = Color3.fromRGB(22, 18, 24)
+RightCard.Parent = MainFrame
+AddCorner(RightCard, 10)
+AddStroke(RightCard, Color3.fromRGB(70, 65, 85), 1, 0.4)
+
+local RightCardTitle = Instance.new("TextLabel")
+RightCardTitle.Size = UDim2.new(1, -16, 0, 18)
+RightCardTitle.Position = UDim2.new(0, 8, 0, 6)
+RightCardTitle.BackgroundTransparency = 1
+RightCardTitle.Text = "🌊 Mượt mà hơn"
+RightCardTitle.TextColor3 = Color3.fromRGB(255, 255, 255)
+RightCardTitle.Font = Enum.Font.GothamBold
+RightCardTitle.TextSize = 11
+RightCardTitle.TextXAlignment = Enum.TextXAlignment.Left
+RightCardTitle.Parent = RightCard
+
+local RightCardSub = Instance.new("TextLabel")
+RightCardSub.Size = UDim2.new(1, -16, 0, 26)
+RightCardSub.Position = UDim2.new(0, 8, 0, 24)
+RightCardSub.BackgroundTransparency = 1
+RightCardSub.Text = "Thao tác nhanh · Ổn định khi treo lâu"
+RightCardSub.TextColor3 = Color3.fromRGB(165, 165, 175)
+RightCardSub.Font = Enum.Font.Gotham
+RightCardSub.TextSize = 9
+RightCardSub.TextWrapped = true
+RightCardSub.TextXAlignment = Enum.TextXAlignment.Left
+RightCardSub.Parent = RightCard
+
+-- Thẻ Discord
+local DiscordCard = Instance.new("Frame")
+DiscordCard.Size = UDim2.new(1, -28, 0, 46)
+DiscordCard.Position = UDim2.new(0, 14, 0, 296)
+DiscordCard.BackgroundColor3 = Color3.fromRGB(24, 24, 52)
+DiscordCard.Parent = MainFrame
+AddCorner(DiscordCard, 12)
+AddStroke(DiscordCard, Color3.fromRGB(88, 101, 242), 1, 0.35)
+
+local DiscordLabel = Instance.new("TextLabel")
+DiscordLabel.Size = UDim2.new(0.65, 0, 0, 16)
+DiscordLabel.Position = UDim2.new(0, 14, 0, 6)
+DiscordLabel.BackgroundTransparency = 1
+DiscordLabel.Text = "💬 THAM GIA DISCORD"
+DiscordLabel.TextColor3 = Color3.fromRGB(165, 180, 255)
+DiscordLabel.Font = Enum.Font.GothamBold
+DiscordLabel.TextSize = 9
+DiscordLabel.TextXAlignment = Enum.TextXAlignment.Left
+DiscordLabel.Parent = DiscordCard
+
+local DiscordLink = Instance.new("TextLabel")
+DiscordLink.Size = UDim2.new(0.65, 0, 0, 18)
+DiscordLink.Position = UDim2.new(0, 14, 0, 22)
+DiscordLink.BackgroundTransparency = 1
+DiscordLink.Text = "https://discord.gg/3JwSJBFuT"
+DiscordLink.TextColor3 = Color3.fromRGB(255, 255, 255)
+DiscordLink.Font = Enum.Font.GothamSemibold
+DiscordLink.TextSize = 11
+DiscordLink.TextXAlignment = Enum.TextXAlignment.Left
+DiscordLink.Parent = DiscordCard
+
+local CopyBtn = Instance.new("TextButton")
+CopyBtn.Size = UDim2.new(0, 82, 0, 26)
+CopyBtn.Position = UDim2.new(1, -92, 0.5, -13)
+CopyBtn.BackgroundColor3 = Color3.fromRGB(88, 101, 242)
+CopyBtn.Text = "📋 SAO CHÉP"
+CopyBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+CopyBtn.Font = Enum.Font.GothamBold
+CopyBtn.TextSize = 9
+CopyBtn.Parent = DiscordCard
+AddCorner(CopyBtn, 13)
+
+CopyBtn.MouseButton1Click:Connect(function()
+	if setclipboard then
+		setclipboard("https://discord.gg/3JwSJBFuT")
+	end
+	CopyBtn.Text = "✓ ĐÃ CHÉP"
+	task.delay(1.5, function()
+		if CopyBtn.Parent then
+			CopyBtn.Text = "📋 SAO CHÉP"
+		end
+	end)
+end)
+
+-- NÚT MỞ SCRIPT CHÍNH (CHUYỂN SANG GIAO DIỆN 2 & TẮT GIAO DIỆN 1)
+local OpenMainBtn = Instance.new("TextButton")
+OpenMainBtn.Name = "OpenMainScriptBtn"
+OpenMainBtn.Size = UDim2.new(1, -28, 0, 48)
+OpenMainBtn.Position = UDim2.new(0, 14, 0, 352)
+OpenMainBtn.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+OpenMainBtn.Text = "🚀 MỞ SCRIPT CHÍNH"
+OpenMainBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+OpenMainBtn.Font = Enum.Font.GothamBlack
+OpenMainBtn.TextSize = 14
+OpenMainBtn.Parent = MainFrame
+AddCorner(OpenMainBtn, 12)
+
+local BtnGradient = Instance.new("UIGradient")
+BtnGradient.Color = ColorSequence.new({
+	ColorSequenceKeypoint.new(0, Color3.fromRGB(235, 55, 35)),
+	ColorSequenceKeypoint.new(1, Color3.fromRGB(245, 115, 25))
+})
+BtnGradient.Parent = OpenMainBtn
+
+local FooterNote = Instance.new("TextLabel")
+FooterNote.Size = UDim2.new(1, 0, 0, 18)
+FooterNote.Position = UDim2.new(0, 0, 1, -22)
+FooterNote.BackgroundTransparency = 1
+FooterNote.Text = "Chilli x Venyx · v11.0.0 · Kéo thanh tiêu đề để di chuyển"
+FooterNote.TextColor3 = Color3.fromRGB(120, 105, 105)
+FooterNote.Font = Enum.Font.Gotham
+FooterNote.TextSize = 9
+FooterNote.Parent = MainFrame
+
+-- Sự kiện khi ấn nút "MỞ SCRIPT CHÍNH": Đóng Giao diện 1 và bật Giao diện 2
+OpenMainBtn.MouseButton1Click:Connect(function()
+	MainFrame:Destroy()
+	OpenSelectorMenu()
+end)
